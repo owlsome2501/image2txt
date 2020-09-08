@@ -1,6 +1,6 @@
 [package]
 name = "image2txt"
-version = "0.1.0"
+version = "1.0.0"
 authors = ["Richard Yao <2501.owlsome@gmail.com>"]
 edition = "2018"
 
