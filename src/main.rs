@@ -2,14 +2,22 @@ use image::{imageops, DynamicImage, GenericImageView, Pixel};
 use std::env;
 use std::fs;
 
+static USAGE: &'static str = "image2txt WIDTH file ...";
+
 fn main() {
     let args: Vec<String> = env::args().collect();
     if args.len() < 3 {
         return;
     }
-    let char_width: usize = args[1].parse().unwrap();
+    let char_width: usize = args[1].parse().expect(USAGE);
     for image_path in args.iter().skip(2) {
-        let img = image::open(image_path).unwrap();
+        let img = match image::open(image_path) {
+            Ok(img) => img,
+            Err(e) => {
+                println!(r#"Can't open "{}" as image. {}"#, image_path, e);
+                continue;
+            }
+        };
         let txt = image2string(img, char_width);
         let output_path = [image_path, ".txt"].concat();
         fs::write(output_path, txt).expect("cant't write file");
@@ -43,14 +51,7 @@ fn image2string(img: DynamicImage, char_width: usize) -> String {
 
     let mut string_img = vec![vec![String::new(); char_width]; char_height];
 
-    // 1 pixel to 1 charactar
-    // for (c, r, pix) in img.enumerate_pixels() {
-    //     let i: u8 = pix.channels()[0];
-    //     string_img[r as usize][c as usize] = if i > threshold { "⣿" } else { " " };
-    // }
-
     // 8 pixels to 1 charactar
-
     for y in 0..char_height {
         for x in 0..char_width {
             let img_patch = img.view(2 * x as u32, 4 * y as u32, 2, 4);
@@ -67,8 +68,6 @@ fn image2string(img: DynamicImage, char_width: usize) -> String {
                     flag |= bit << cur;
                 }
             }
-            // print!("({},{})-({},{})", x * 2, y * 4, x * 2 + 2, y * 4 + 4);
-            // println!("{}", flag);
             string_img[y as usize][x as usize] = std::char::from_u32(0x2800 + flag as u32)
                 .unwrap()
                 .to_string();
